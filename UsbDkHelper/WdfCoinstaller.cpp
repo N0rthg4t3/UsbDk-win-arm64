@@ -34,8 +34,11 @@
 #endif
 
 WdfCoinstaller::WdfCoinstaller()
+    : m_wdfCoinstallerLibrary(nullptr)
 {
+#if USBDK_USE_WDF_COINSTALLER
     loadWdfCoinstaller();
+#endif
 }
 
 WdfCoinstaller::~WdfCoinstaller()
@@ -77,6 +80,10 @@ void WdfCoinstaller::loadWdfCoinstaller()
 
 bool WdfCoinstaller::PreDeviceInstallEx(const tstring &infFilePath)
 {
+#if !USBDK_USE_WDF_COINSTALLER
+    UNREFERENCED_PARAMETER(infFilePath);
+    return true;
+#else
     WDF_COINSTALLER_INSTALL_OPTIONS clientOptions;
     WDF_COINSTALLER_INSTALL_OPTIONS_INIT(&clientOptions);
 
@@ -95,33 +102,46 @@ bool WdfCoinstaller::PreDeviceInstallEx(const tstring &infFilePath)
     }
 
     return true;
+#endif
 }
 
 void WdfCoinstaller::PostDeviceInstall(const tstring &infFilePath)
 {
+#if !USBDK_USE_WDF_COINSTALLER
+    UNREFERENCED_PARAMETER(infFilePath);
+#else
     ULONG res = m_pfnWdfPostDeviceInstall(infFilePath.c_str(), WDF_SECTION_NAME);
     if (ERROR_SUCCESS != res)
     {
         throw UsbDkWdfCoinstallerFailedException(TEXT("WdfPostDeviceInstall() failed"), res);
     }
+#endif
 }
 
 void WdfCoinstaller::PreDeviceRemove(const tstring &infFilePath)
 {
+#if !USBDK_USE_WDF_COINSTALLER
+    UNREFERENCED_PARAMETER(infFilePath);
+#else
     ULONG res = m_pfnWdfPreDeviceRemove(infFilePath.c_str(), WDF_SECTION_NAME);
     if (ERROR_SUCCESS != res)
     {
         throw UsbDkWdfCoinstallerFailedException(TEXT("WdfPreDeviceRemove() failed"), res);
     }
+#endif
 }
 
 void WdfCoinstaller::PostDeviceRemove(const tstring &infFilePath)
 {
+#if !USBDK_USE_WDF_COINSTALLER
+    UNREFERENCED_PARAMETER(infFilePath);
+#else
     ULONG res = m_pfnWdfPostDeviceRemove(infFilePath.c_str(), WDF_SECTION_NAME);
     if (ERROR_SUCCESS != res)
     {
         throw  UsbDkWdfCoinstallerFailedException(TEXT("WdfPostDeviceRemove() failed"), res);
     }
+#endif
 }
 
 void WdfCoinstaller::freeWdfCoinstallerLibrary()

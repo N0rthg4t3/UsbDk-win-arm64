@@ -27,6 +27,14 @@
 
 #define WDF_COINSTALLER_EXCEPTION_STRING TEXT("WdfCoinstaller exception: ")
 
+// Microsoft never shipped a WDF co-installer for ARM64,
+// KMDF is an inbox component of every ARM64 Windows release.
+#if defined(_M_ARM64)
+#define USBDK_USE_WDF_COINSTALLER 0
+#else
+#define USBDK_USE_WDF_COINSTALLER 1
+#endif
+
 class UsbDkWdfCoinstallerFailedException : public UsbDkW32ErrorException
 {
 public:

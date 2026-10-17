@@ -74,6 +74,7 @@ private:
     void    buildMultiStringVectorFromList(vector<TCHAR> &valVector, tstringlist &newfiltersList);
     void    validatePlatform();
     bool    isWow64B();
+    bool    isNativeMachine();
     void    verifyDriverCanStart();
 
 };

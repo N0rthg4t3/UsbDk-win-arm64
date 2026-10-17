@@ -42,6 +42,10 @@ extern "C"
 #pragma warning(pop)
 #endif
 
+// Current WDK headers deprecate ExAllocatePoolWithTag (Windows 10 2004+),
+// it is still supported on every Windows version UsbDk runs on.
+#pragma warning(disable: 4996)
+
 #if !TARGET_OS_WIN_XP && (NTDDI_VERSION >= NTDDI_WIN8)
 #define USBDK_NON_PAGED_POOL    NonPagedPoolNx
 #else

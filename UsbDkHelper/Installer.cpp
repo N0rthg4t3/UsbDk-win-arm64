@@ -272,7 +272,7 @@ void UsbDkInstaller::buildNewListWithoutEement(tstringlist &newfiltersList, tstr
 {
     for (auto filter : filtersList)
     {
-        if (filter != USBDK_DRIVER_NAME)
+        if (filter != element)
         {
             newfiltersList.push_back(filter);
         }
@@ -286,6 +286,45 @@ void UsbDkInstaller::validatePlatform()
         throw UsbDkInstallerFailedException(TEXT("Running 32Bit package on 64Bit OS not supported."),
                                             ERROR_EXE_MACHINE_TYPE_MISMATCH);
     }
+
+    if (!isNativeMachine())
+    {
+        throw UsbDkInstallerFailedException(TEXT("Package CPU architecture does not match the OS (e.g. x64 package on ARM64 Windows), use the native package."),
+                                            ERROR_EXE_MACHINE_TYPE_MISMATCH);
+    }
+}
+
+#ifndef IMAGE_FILE_MACHINE_ARM64
+#define IMAGE_FILE_MACHINE_ARM64 0xAA64
+#endif
+
+bool UsbDkInstaller::isNativeMachine()
+{
+#if defined(_M_ARM64)
+    const USHORT buildMachine = IMAGE_FILE_MACHINE_ARM64;
+#elif defined(_M_AMD64)
+    const USHORT buildMachine = IMAGE_FILE_MACHINE_AMD64;
+#else
+    const USHORT buildMachine = IMAGE_FILE_MACHINE_I386;
+#endif
+
+    // IsWow64Process() does not report x64 emulation on ARM64, IsWow64Process2() does (Win10 1709+)
+    typedef BOOL(WINAPI *LPFN_ISWOW64PROCESS2) (HANDLE, USHORT *, USHORT *);
+
+    LPFN_ISWOW64PROCESS2 fnIsWow64Process2 = reinterpret_cast<LPFN_ISWOW64PROCESS2>(GetProcAddress(GetModuleHandle(TEXT("kernel32")), "IsWow64Process2"));
+    if (nullptr == fnIsWow64Process2)
+    {
+        return true;
+    }
+
+    USHORT processMachine, nativeMachine;
+    if (!fnIsWow64Process2(GetCurrentProcess(), &processMachine, &nativeMachine))
+    {
+        return true;
+    }
+
+    // processMachine is IMAGE_FILE_MACHINE_UNKNOWN for non-WOW64 processes, including emulated x64 ones
+    return (processMachine != IMAGE_FILE_MACHINE_UNKNOWN) || (nativeMachine == buildMachine);
 }
 
 bool UsbDkInstaller::isWow64B()
